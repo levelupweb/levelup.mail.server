@@ -1,17 +1,25 @@
 const emailjs = require("emailjs");
 const express = require("express");
 const bodyParser = require("body-parser");
+const whitelist = require('./white.js');
 const cors = require("cors");
 const app = express();
 const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
 const secret = "8gia89fianfiajsf";
 
-const whitelist = ['http://promo.levelupworlds.com', 'https://promo.levelupworlds.com', 
-'http://web.levelupworlds.com', 'https://web.levelupworlds.com', 'http://185.22.232.114'
-]
+dotenv.load();
+
+const mailserver = emailjs.server.connect({
+	user: process.env.SMTP_LOGIN,
+	password: process.env.SMTP_PASSWORD,
+	host: process.env.SMTP_HOST,
+	ssl: true
+});
+
 const corsOptions = {
   origin(origin, callback) {
-    if (whitelist.indexOf(origin) !== -1) {
+    if (whitelist.hosts.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
@@ -19,16 +27,14 @@ const corsOptions = {
   }
 }
 
-const mailserver = emailjs.server.connect({
-	user: "hh@levelupworlds.com",
-	password: "dqei901du890y10h",
-	host: "smtp.gmail.com",
-	ssl: true
-});
-
 app.use(bodyParser());
-app.use(cors(corsOptions));
 
+if(process.env.APPLICATION_MODE !== 'production') {
+	console.log('Running in dev mode')
+	app.use(cors());
+} else {
+	app.use(cors(corsOptions));
+}
 
 app.get("/", function(req, res) {
 	res.send(
@@ -38,48 +44,55 @@ app.get("/", function(req, res) {
 
 
 app.post("/send", function(req, res) {
-	if (req.headers["x-access-token"] === secret) {
-		const { who, to, subject, html } = req.body;
-		if(who && to && subject && html) {
-			mailserver.send(
-				{
-					from: who + "<hh@levelupworlds.com>",
-					to: "<" + to + ">",
-					subject: subject,
-					attachment: [
-						{
-							data: html,
-							alternative: true
+	const { who, to, subject, html } = req.body;
+	const token = req.headers["authorization"];
+	jwt.verify(token, new Buffer(process.env.APPLICATION_SECRET), (err, decoded) => {
+		if(!err && decoded) {
+			if(who && to && subject && html) {
+				if (whitelist.applications.indexOf(decoded.application_id) !== -1) {
+					mailserver.send({
+							from: who + process.env.EMAIL_FROM,
+							to: "<" + to + ">",
+							subject: subject,
+							attachment: [ {
+								data: html,
+								alternative: true
+							}]
+						}, function(err, message) {
+							if (err) return res.status(500).json({
+								success: false,
+								message: 'Ошибка сервера',
+								errors: err
+							});
+							res.status(200).json({
+								message: 'Мы получили ваше сообщение и скоро мы с вами свяжемся',
+								success: true
+							});
 						}
-					]
-				},
-				function(err, message) {
-					if (err) return res.status(500).json({
+					);
+				} else {
+					res.status(401).json({
 						success: false,
-						message: 'Ошибка сервера',
-						errors: err
-					});
-					res.status(200).json({
-						message: 'Мы получили ваше сообщение и скоро мы с вами свяжемся',
-						success: true
-					});
+						message: 'Неавторизованное приложение'
+					})
 				}
-			);
+			} else {
+				res.status(500).json({
+					success: false,
+					message: "Почтовый сервер получил недостаточное количество данных (ошибка сервера)"
+				});
+			}
 		} else {
-			res.status(500).json({
+			console.log(err);
+			res.status(401).json({
 				success: false,
-				message: "Почтовый сервер получил недостаточное количество данных (ошибка сервера)"
+				message: "Неверный токен"
 			});
-		}
-	} else {
-		res.status(401).json({
-			success: false,
-			message: "Неверный токен"
-		});
-	} 
+		} 
+	})
 });
 
-app.listen(3080, function() {
-	console.log(" ------------------------------------------");
-	console.log(" -> Mail Levelup Server Listening on: 3080!");
+app.listen(process.env.APPLICATION_PORT, function() {
+	console.log(" -> Levelup Mail on " + process.env.APPLICATION_PORT);
+	console.log(" -> Address is " + process.env.APPLICATION_HOST + ':' + process.env.APPLICATION_PORT);
 });
