@@ -1,0 +1,26 @@
+{
+  "name": "mailer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js --exec babel-node --presets es2015,stage-2",
+    "build": "babel lib -d dist",
+    "serve": "node dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-register": "^6.24.1"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cors": "^2.8.4",
+    "emailjs": "^1.0.11",
+    "express": "^4.15.4",
+    "jsonwebtoken": "^7.4.3",
+    "react-notification-system": "^0.2.15",
+    "react-notifications": "^1.4.3"
+  }
+}
