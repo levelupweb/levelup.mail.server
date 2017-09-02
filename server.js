@@ -51,7 +51,7 @@ app.post("/send", function(req, res) {
 			if(who && to && subject && html) {
 				if (whitelist.applications.indexOf(decoded.application_id) !== -1) {
 					mailserver.send({
-							from: who + process.env.EMAIL_FROM,
+							from: process.env.EMAIL_FROM,
 							to: "<" + to + ">",
 							subject: subject,
 							attachment: [ {
@@ -59,7 +59,8 @@ app.post("/send", function(req, res) {
 								alternative: true
 							}]
 						}, function(err, message) {
-							if (err) return res.status(500).json({
+		console.log(err)
+					if (err) return res.status(500).json({
 								success: false,
 								message: 'Ошибка сервера',
 								errors: err
