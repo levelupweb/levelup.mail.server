@@ -11,13 +11,18 @@ module.exports = {
 		'http://levelupworlds.com', 
 		'https://levelupworlds.com',
 		'http://levelup.name', 
-		'https://levelup.name'
+		'https://levelup.name',
+		'http://kostroma-kino.ru',
+		'https://kostroma-kino.ru',
+		'http://kostromafilm.ru',
+		'https://kostromafilm.ru',
 	],
 	applications: [
 		'03258934',
 		'53993485',
 		'78348369',
 		'73285761',
-		'16462384'
+		'16462384',
+		'64516474',
 	]
 }
